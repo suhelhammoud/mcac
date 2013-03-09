@@ -1,0 +1,72 @@
+@relation Labord
+@attribute 1 {-_2=65,2=65+,?}
+@attribute 2 {-_3=25,3=25+,?}
+@attribute 3 {-_3=25,3=25+,?}
+@attribute 4 {tcf,none,tc,?}
+@attribute 5 {none,empl_contr,ret_allw,?}
+@attribute 6 {6+,-_6,?}
+@attribute 7 {yes,?,no}
+@attribute 8 {below_average,average,generous,?}
+@attribute 9 {yes,?,no}
+@attribute 10 {none,full,?,half}
+@attribute 11 {yes,?,no}
+@attribute 12 {none,full,?,half}
+@attribute class {bad,good}
+@data
+2=65+,3=25+,3=25+,?,?,?,?,average,?,half,yes,half,good
+2=65+,3=25+,?,tcf,?,?,?,?,yes,half,?,half,good
+2=65+,?,?,none,empl_contr,?,?,generous,yes,full,?,?,good
+2=65+,3=25+,3=25+,tc,?,?,yes,?,?,?,yes,?,good
+-_2=65,-_3=25,?,?,none,?,?,below_average,?,?,?,?,bad
+-_2=65,?,?,tc,ret_allw,-_6,no,below_average,yes,half,?,none,bad
+2=65+,3=25+,3=25+,?,?,?,?,average,?,half,yes,half,good
+2=65+,3=25+,?,tcf,?,?,yes,below_average,yes,none,?,half,good
+2=65+,?,?,?,?,?,?,below_average,?,?,?,?,good
+2=65+,3=25+,?,?,?,?,?,?,yes,full,?,?,good
+-_2=65,-_3=25,-_3=25,?,empl_contr,?,?,average,?,?,yes,none,bad
+2=65+,?,?,none,none,?,yes,average,no,none,no,none,bad
+2=65+,3=25+,?,none,?,?,no,below_average,yes,full,yes,full,good
+2=65+,?,?,none,?,?,no,generous,?,?,?,?,good
+2=65+,3=25+,?,none,empl_contr,?,?,average,?,full,yes,?,good
+2=65+,3=25+,3=25+,none,?,?,?,generous,?,?,yes,full,good
+-_2=65,?,?,none,none,?,yes,average,no,none,no,none,bad
+-_2=65,-_3=25,?,tcf,none,?,?,below_average,?,?,yes,?,bad
+2=65+,3=25+,3=25+,tcf,?,?,?,generous,?,?,yes,full,good
+2=65+,3=25+,3=25+,none,?,?,no,average,?,half,?,?,good
+2=65+,3=25+,?,none,?,?,?,average,?,full,yes,full,good
+2=65+,?,?,?,?,6+,?,generous,?,?,?,?,good
+-_2=65,-_3=25,?,tc,empl_contr,?,?,average,?,?,yes,?,bad
+-_2=65,-_3=25,-_3=25,tc,none,-_6,no,below_average,no,half,yes,full,bad
+2=65+,3=25+,3=25+,tcf,?,?,?,?,?,?,?,?,good
+2=65+,3=25+,?,?,ret_allw,?,yes,below_average,?,full,?,full,good
+2=65+,3=25+,?,?,?,?,?,?,?,full,?,?,good
+2=65+,3=25+,?,?,?,?,?,generous,?,half,?,full,good
+2=65+,3=25+,?,?,?,?,no,below_average,no,half,?,half,bad
+-_2=65,-_3=25,-_3=25,none,none,?,?,below_average,?,half,yes,full,bad
+2=65+,3=25+,?,none,empl_contr,?,?,average,yes,full,?,full,good
+2=65+,3=25+,3=25+,tcf,?,?,?,generous,?,full,yes,full,good
+2=65+,?,?,?,?,?,?,average,?,?,yes,?,good
+-_2=65,-_3=25,?,tcf,empl_contr,?,yes,?,yes,half,yes,?,good
+2=65+,3=25+,?,none,none,?,?,below_average,no,none,?,none,bad
+-_2=65,-_3=25,?,none,none,?,no,average,yes,none,yes,full,bad
+2=65+,3=25+,?,none,?,?,?,average,yes,full,yes,half,good
+2=65+,3=25+,?,none,ret_allw,?,?,average,yes,full,yes,full,good
+2=65+,3=25+,-_3=25,?,?,?,?,below_average,?,?,?,?,good
+2=65+,3=25+,3=25+,?,?,?,?,generous,yes,full,yes,full,good
+-_2=65,-_3=25,?,?,empl_contr,?,?,average,?,?,?,?,bad
+2=65+,?,?,none,empl_contr,-_6,no,below_average,yes,half,?,none,bad
+2=65+,3=25+,?,?,?,6+,yes,below_average,yes,half,yes,?,good
+-_2=65,-_3=25,?,?,?,?,yes,average,?,?,?,?,good
+?,?,?,?,empl_contr,?,?,generous,yes,half,yes,half,good
+-_2=65,?,?,tc,ret_allw,-_6,no,generous,no,none,no,none,bad
+2=65+,3=25+,?,none,?,?,no,below_average,no,half,?,half,bad
+2=65+,3=25+,?,none,empl_contr,6+,?,generous,yes,?,?,full,good
+2=65+,3=25+,3=25+,tc,empl_contr,?,?,generous,yes,none,yes,half,good
+2=65+,3=25+,?,tcf,?,6+,?,generous,?,?,?,?,good
+2=65+,3=25+,?,none,none,?,no,below_average,no,none,?,none,bad
+-_2=65,-_3=25,?,?,none,?,?,average,?,?,yes,full,bad
+2=65+,3=25+,?,?,?,?,?,generous,?,full,?,full,good
+2=65+,3=25+,?,none,?,6+,?,below_average,yes,?,?,full,good
+2=65+,-_3=25,?,none,?,?,yes,generous,?,?,yes,full,good
+-_2=65,-_3=25,?,none,empl_contr,?,yes,generous,yes,none,yes,full,bad
+2=65+,-_3=25,-_3=25,tc,none,?,no,below_average,yes,half,yes,full,bad
