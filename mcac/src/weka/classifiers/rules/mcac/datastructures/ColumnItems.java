@@ -192,19 +192,6 @@ public class ColumnItems extends LinkedHashMap<Integer, FrequentItem>{
 		return result;
 		
 	}
-	
-	
-	private List<Integer> applySuppConfThreshold(int minSupp, double minConf){
-		List<Integer> result = new ArrayList<>();
-
-		for (Map.Entry<Integer, FrequentItem> e : entrySet()) {
-
-		}
-
-
-		return result;
-
-	}
 
 	public void generateOccurances(Map<Integer, Integer> itemMap,
 			Map<Integer, Integer> labelMap){
@@ -222,14 +209,6 @@ public class ColumnItems extends LinkedHashMap<Integer, FrequentItem>{
 		}
 	}
 
-	public static void testprintMap(Map<Integer ,Map<Integer, Integer>> map){
-		for (Map<Integer, Integer> m : map.values()) {
-			String a = Joiner.on("\n").withKeyValueSeparator("->").join(m);
-			System.out.println(a);
-
-			System.out.println("\n\n\n---------------------------------------\n");
-		}
-
-	}
+	
 
 }

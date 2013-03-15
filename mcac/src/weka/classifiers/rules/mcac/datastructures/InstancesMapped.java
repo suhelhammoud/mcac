@@ -13,9 +13,6 @@ import weka.core.Instances;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 
 public class InstancesMapped {
 
@@ -29,6 +26,12 @@ public class InstancesMapped {
 		this.instances = data;
 		existingColumns = new HashMap<>();
 	}
+	
+//	public InstancesMapped(Instances data, int labelIndex){
+//		this.instances = data;
+//		existingColumns = new HashMap<>();
+//	}
+	
 	
 	public final Instances instances;
 	

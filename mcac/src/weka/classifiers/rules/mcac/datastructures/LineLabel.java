@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 
 @SuppressWarnings("serial")
@@ -17,7 +18,7 @@ class BiLabel  {
 	private final BiMap<Integer, Integer> lineLbl;
 	
 	public BiLabel(Map<Integer, Integer> map) {
-		lblLine = ImmutableBiMap.of();
+		lblLine = HashBiMap.create(map);
 		lblLine.putAll(map);
 		lineLbl = lblLine.inverse();
 	}

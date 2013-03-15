@@ -78,14 +78,6 @@ public class FrequentItem {
 	final private Multimap<Integer, Integer> lbln;
 	private Calc calc;
 
-//	private int id;
-//	
-//	public void setID(int id){
-//		this.id= id;
-//	}
-//	public int getID(){
-//		return id;
-//	}
 	
 	public FrequentItem() {
 		lbln = HashMultimap.create();
@@ -101,10 +93,6 @@ public class FrequentItem {
 		return calc == null? calculate(): calc;
 	}
 	
-//	public void setCalc(Calc outCalc){
-//		this.calc = outCalc;
-//	}
-	
 	/**
 	 * Put label, line
 	 * @param lbl
@@ -117,6 +105,10 @@ public class FrequentItem {
 	
 	public Collection<Integer> get(int lbl){
 		return lbln.get(lbl);
+	}
+	
+	public Collection<Integer> values(){
+		return lbln.values();
 	}
 	
 	@Override

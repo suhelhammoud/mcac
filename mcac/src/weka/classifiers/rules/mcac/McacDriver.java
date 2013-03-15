@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import weka.classifiers.rules.mcac.datastructures.ColumnID;
 import weka.classifiers.rules.mcac.datastructures.ColumnItems;
 import weka.classifiers.rules.mcac.datastructures.InstancesMapped;
+import weka.classifiers.rules.mcac.datastructures.RuleID;
 
 public class McacDriver {
 
@@ -110,13 +111,13 @@ public class McacDriver {
 		}
 		
 	}
-
-	public static void filterNotSurrvivedConfidences(InstancesMapped data, int order){
-		Map<ColumnID, ColumnItems> previousOrder = data.existingColumns.get(order);
-		
-		if(previousOrder.size() == 0)
-			data.existingColumns.remove(order);
-	}
+//
+//	public static void filterNotSurrvivedConfidences(InstancesMapped data, int order){
+//		Map<ColumnID, ColumnItems> previousOrder = data.existingColumns.get(order);
+//		
+//		if(previousOrder.size() == 0)
+//			data.existingColumns.remove(order);
+//	}
 	
 	public static void generateFrequentItems(InstancesMapped data){
 		Map<ColumnID, ColumnItems> atomics = generateAtomicFrequentItems(data);
@@ -137,6 +138,10 @@ public class McacDriver {
 		}
 	}
 
+	public static Map<Integer, RuleID> mapRuleSurvivedRulesToLines(InstancesMapped data){
+		
+		return null;
+	}
 
 
 }
@@ -177,12 +182,10 @@ class JoinColumns implements Runnable{
 	final private double minconfidence;
 	final private Map<ColumnID, ColumnItems> result;
 
-	//
-
-
 
 	public JoinColumns(InstancesMapped data, ColumnItems col1, ColumnItems col2, 
 			Map<ColumnID, ColumnItems> result) {
+		
 		this.col1 = col1;
 		this.col2 = col2;
 		this.minsupport = data.getMinSupport();

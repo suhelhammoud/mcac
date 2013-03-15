@@ -1,11 +1,9 @@
 package weka.classifiers.rules.mcac.datastructures;
 
-import java.util.Comparator;
-
 import com.google.common.base.Objects;
 
 
-public class RuleID {
+public class RuleID{
 	public final ColumnID colid;
 	public final int rowid;
 	public final int support;
@@ -17,6 +15,11 @@ public class RuleID {
 		this.rowid = rowid;
 		this.support = support;
 		this.confidence = confidence;
+	}
+	
+	public static RuleID of(ColumnID colid, FrequentItem item){
+		Calc calc = item.getCalc();
+		return new RuleID(colid, calc.rowId , calc.support, calc.confidence);
 	}
 	
 	@Override
@@ -33,7 +36,6 @@ public class RuleID {
 				&& Math.abs(this.confidence - that.confidence) < 1e-6 ;
 		
 	}
-	
 	
 	@Override
 	public int hashCode() {
