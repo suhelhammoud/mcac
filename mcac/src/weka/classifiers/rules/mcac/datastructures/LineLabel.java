@@ -17,12 +17,19 @@ class BiLabel  {
 	private final BiMap<Integer, Integer> lblLine;// = ImmutableBiMap.of();
 	private final BiMap<Integer, Integer> lineLbl;
 	
-	public BiLabel(Map<Integer, Integer> map) {
-		lblLine = HashBiMap.create(map);
-		lblLine.putAll(map);
+	public BiLabel(Map<Integer, Integer> llnmap) {
+		lblLine = HashBiMap.create(llnmap);
+		lblLine.putAll(llnmap);
 		lineLbl = lblLine.inverse();
 	}
 	
+	public Integer getLable(Integer line){
+		return lineLbl.get(line);
+	}
+	
+	public Integer getLine(Integer label){
+		return lblLine.get(label);
+	}
 	
 	void test(){
 	}

@@ -58,7 +58,6 @@ class Compare_CONF_SUPP_CARD extends RuleComparator{
 	@Override
 	public int compare(RuleID r1, RuleID r2) {
 		int diff;
-		
 		diff = Double.compare(r1.confidence, r2.confidence);
 		if(diff != 0) return diff;
 

@@ -10,66 +10,123 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import weka.classifiers.Classifier;
 import weka.classifiers.rules.mcac.datastructures.ColumnID;
 import weka.classifiers.rules.mcac.datastructures.ColumnItems;
 import weka.classifiers.rules.mcac.datastructures.InstancesMapped;
 import weka.classifiers.rules.mcac.datastructures.RuleID;
+import weka.core.Instance;
+import weka.core.Instances;
 
+/**
+ * Used for reading the weka arff file to weka.
+ * 
+ * @author suheil
+ * 
+ */
 public class McacDriver {
 
 	/**
 	 * 
-	 * @param data , instances, mapped integers, and parameters
+	 * @param data
+	 *            , instances, mapped integers, and parameters
 	 * @param order
-	 * @return
+	 *            candidate rule size
+	 * @return Map<ColumnsID, MapOfFrequentItems>
 	 */
-	public static Map<ColumnID,ColumnItems> generateOrderedFrequentItems(
-			InstancesMapped data, int order){
+	public static Map<ColumnID, ColumnItems> generateOrderedFrequentItems(
+			final InstancesMapped data, int order) {
 
-		Map<ColumnID, ColumnItems> result = Collections.synchronizedMap(
-				new HashMap<ColumnID, ColumnItems>());//TODO estimate the initial capacity
+		final Map<ColumnID, ColumnItems> result = Collections
+				.synchronizedMap(new HashMap<ColumnID, ColumnItems>());// TODO
+																		// estimate
+																		// the
+																		// initial
+																		// capacity
 
-		List<ColumnItems> inColumns = new ArrayList<>(
-				data.existingColumns.get(order-1).values());//TODO use collection directly
+		final Map<ColumnID, ColumnItems> inColumns = data.existingColumns
+				.get(order - 1);// TODO use collection directly
 
-		int nrOfProcessors = Runtime.getRuntime().availableProcessors();
-		ExecutorService exec = Executors.newFixedThreadPool(nrOfProcessors);
+		List<ColumnID> ids = new ArrayList<>(data.existingColumns
+				.get(order - 1).keySet());
 
-		for (int i = 0; i < inColumns.size()-1; i++) {
-			for (int j = i+1 ; j < inColumns.size(); j++) {
-
-				JoinColumns joiner = new JoinColumns(data, inColumns.get(i), inColumns.get(j), result);
-
-				exec.execute(joiner);
-			}
-			exec.shutdown();
-			try {
-				boolean okDoneAllTasks = exec.awaitTermination(180, TimeUnit.SECONDS);
-				assert okDoneAllTasks;
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		return result;
-	}
-
-
-	public static Map<ColumnID, ColumnItems> generateAtomicFrequentItems(InstancesMapped data){
-
-		Map<ColumnID, ColumnItems> results = Collections.synchronizedMap(
-				new HashMap<ColumnID, ColumnItems>(data.instances.numAttributes()));//TODO estimate the initial capacity
+		List<ColumnID> idsCombined = ColumnID.combined(ids);
+		// check no combination
+		if (idsCombined.size() == 0)
+			return result;
 
 		int nrOfProcessors = Runtime.getRuntime().availableProcessors();
 		ExecutorService exec = Executors.newFixedThreadPool(nrOfProcessors);
 
-		for (Integer key : data.intCols.keySet()) {
-			AtomicColumns atomic = new AtomicColumns(data, key, results);
-			exec.execute(atomic);
+		for (final ColumnID colid : idsCombined) {
+			exec.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					ColumnItems col = ColumnItems.join(colid,
+							inColumns.get(colid.dropLast()),
+							inColumns.get(colid.dropFirst()),
+							data.getMinSupport(), data.getMinConfidence());
+
+					if (col == ColumnItems.ZERO)
+						return;
+
+					synchronized (result) {
+						Object success = result.put(colid, col);
+						assert success == null;
+					}
+
+				}
+			});
 		}
 
 		exec.shutdown();
 		try {
-			boolean okDoneAllTasks = exec.awaitTermination(180, TimeUnit.SECONDS);
+			boolean okDoneAllTasks = exec.awaitTermination(1800,
+					TimeUnit.SECONDS);// TODO adjust timing
+			assert okDoneAllTasks;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		return result;
+	}
+
+	public static Map<ColumnID, ColumnItems> generateAtomicFrequentItems(
+			final InstancesMapped data) {
+
+		final Map<ColumnID, ColumnItems> results = Collections
+				.synchronizedMap(new HashMap<ColumnID, ColumnItems>(
+						data.instances.numAttributes()));// TODO estimate the
+															// initial capacity
+
+		int nrOfProcessors = Runtime.getRuntime().availableProcessors();
+		ExecutorService exec = Executors.newFixedThreadPool(nrOfProcessors);
+
+		for (final Integer key : data.intCols.keySet()) {
+			exec.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					ColumnItems col = ColumnItems.of(key);
+					col.generateAtomicValues(data);
+
+					if (col.size() == 0)
+						return;
+
+					synchronized (results) {
+						Object success = results.put(ColumnID.of(key), col);
+						assert success == null;// column not previously mapped
+					}
+					;
+				}
+			});
+		}
+
+		exec.shutdown();
+		try {
+			boolean okDoneAllTasks = exec.awaitTermination(1800,
+					TimeUnit.SECONDS);// TODO adjust timing
 			assert okDoneAllTasks;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -78,135 +135,95 @@ public class McacDriver {
 		return results;
 	}
 
-	public static void filterNotSurrvivedConfidences(Map<ColumnID, ColumnItems> subMap, final double minConf){
-		
+	public static void filterNotSurrvivedConfidences(
+			Map<ColumnID, ColumnItems> subMap, final double minConf) {
+
 		int nrOfProcessors = Runtime.getRuntime().availableProcessors();
 		ExecutorService exec = Executors.newFixedThreadPool(nrOfProcessors);
 
-		for (Iterator<Map.Entry<ColumnID, ColumnItems>> iter = subMap.entrySet().iterator(); iter.hasNext();) {
+		for (Iterator<Map.Entry<ColumnID, ColumnItems>> iter = subMap
+				.entrySet().iterator(); iter.hasNext();) {
 			final ColumnItems col = iter.next().getValue();
-			
+
 			exec.execute(new Runnable() {
 				@Override
-				public void run() {	
+				public void run() {
 					col.filterNotSurvived(minConf);
 				}
 			});
-			
+
 		}
-		
+
 		exec.shutdown();
-		
+
 		try {
-			boolean okDoneAllTasks = exec.awaitTermination(180, TimeUnit.SECONDS);
+			boolean okDoneAllTasks = exec.awaitTermination(180,
+					TimeUnit.SECONDS);
 			assert okDoneAllTasks;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
-		//prune zero columns
-		for (Iterator<Map.Entry<ColumnID, ColumnItems>> iter = subMap.entrySet().iterator(); iter.hasNext();) {
+
+		// prune zero columns
+		for (Iterator<Map.Entry<ColumnID, ColumnItems>> iter = subMap
+				.entrySet().iterator(); iter.hasNext();) {
 			final ColumnItems col = iter.next().getValue();
-			if(col.size() == 0) iter.remove();
+			if (col.size() == 0)
+				iter.remove();
 		}
-		
+
 	}
-//
-//	public static void filterNotSurrvivedConfidences(InstancesMapped data, int order){
-//		Map<ColumnID, ColumnItems> previousOrder = data.existingColumns.get(order);
-//		
-//		if(previousOrder.size() == 0)
-//			data.existingColumns.remove(order);
-//	}
-	
-	public static void generateFrequentItems(InstancesMapped data){
+
+	/**
+	 * changes added to data.existingColumns
+	 * 
+	 * @param data
+	 */
+	public static void generateFrequentItems(InstancesMapped data) {
 		Map<ColumnID, ColumnItems> atomics = generateAtomicFrequentItems(data);
 
-		if(atomics.size() == 0) return;
+		if (atomics.size() == 0)
+			return;// No more heigher order columns
 
 		data.existingColumns.put(1, atomics);
 
 		for (int order = 2; order < data.intCols.size(); order++) {
-			Map<ColumnID, ColumnItems> joins = generateOrderedFrequentItems(data, order);			
-			if(joins.size() == 0) return;
-			
-			data.existingColumns.put(order, joins);
-			
-			/** save more memroy delete frequentitems which are not rules */
-			//filterNotSurrvivedConfidences(data, order-1);//TODO test for 
-			
+			Map<ColumnID, ColumnItems> subMap = generateOrderedFrequentItems(
+					data, order);
+			if (subMap.size() == 0)
+				return;// No more heigher order columns
+
+			data.existingColumns.put(order, subMap);
+
+			// TODO save more memroy delete frequentitems which are not rules
+			filterNotSurrvivedConfidences(data.existingColumns.get(order-1),
+					data.getMinConfidence());
+
 		}
 	}
-
-	public static Map<Integer, RuleID> mapRuleSurvivedRulesToLines(InstancesMapped data){
-		
-		return null;
-	}
-
-
-}
-
-class AtomicColumns implements Runnable{
-	final public int colid;
-	final private InstancesMapped data;
-	final private Map<ColumnID, ColumnItems> result;
-
-	public AtomicColumns(InstancesMapped data, int colid,  Map<ColumnID, ColumnItems> result) {
-		this.data = data;
-		this.colid = colid;
-		assert result != null;
-		this.result = result;
-	}
-
-	@Override
-	public void run() {
-		ColumnItems col = ColumnItems.of(colid);
-		col.generateAtomicValues(data);
-
-		if(col.size() == 0) return;
-
-
-		synchronized (result) {
-			Object success = result.put(col.colid, col);
-			assert success == null;// column not previously mapped
+	
+	public static Classifier getClassifier(InstancesMapped data){
+		return new Classifier() {
+			
+			@Override
+			public void buildClassifier(Instances data) throws Exception {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public double classifyInstance(Instance instance) throws Exception {
+				// TODO Auto-generated method stub
+				return super.classifyInstance(instance);
+			}
 		};
-
-	}
-
-}
-
-class JoinColumns implements Runnable{
-
-	final private ColumnItems col1, col2;
-	final private int minsupport;
-	final private double minconfidence;
-	final private Map<ColumnID, ColumnItems> result;
-
-
-	public JoinColumns(InstancesMapped data, ColumnItems col1, ColumnItems col2, 
-			Map<ColumnID, ColumnItems> result) {
 		
-		this.col1 = col1;
-		this.col2 = col2;
-		this.minsupport = data.getMinSupport();
-		this.minconfidence = data.getMinConfidence();
-		this.result = result;
 	}
 
+	public static Map<Integer, RuleID> mapRuleSurvivedRulesToLines(
+			InstancesMapped data) {
 
-
-	@Override
-	public void run() {
-		ColumnItems col = ColumnItems.join(col1,
-				col2, minsupport, minconfidence);	
-
-		if(col == ColumnItems.ZERO)
-			return;
-
-		synchronized (result) {
-			Object success = result.put(col.colid, col);
-			assert success == null;
-		}
+		return null;
 	}
 
 }

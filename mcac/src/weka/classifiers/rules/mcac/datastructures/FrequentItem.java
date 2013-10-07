@@ -1,4 +1,4 @@
-package weka.classifiers.rules.mcac.datastructures;
+ package weka.classifiers.rules.mcac.datastructures;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -83,12 +83,21 @@ public class FrequentItem {
 		lbln = HashMultimap.create();
 	}
 	
-	
-	private Calc calculate(){
+	/**
+	 * update calc values
+	 * @return
+	 */
+	public Calc calculate(){
 		this.calc = calculate(this);
 		return calc;
 	}
 	
+	
+	/**
+	 * calculate() for the first time, or return the cashed calc value (for performance)
+	 * If you are not sure if values are calculated use calculateAndGet() instead. 
+	 * @return
+	 */
 	public Calc getCalc(){
 		return calc == null? calculate(): calc;
 	}
@@ -129,6 +138,9 @@ public class FrequentItem {
 		f.put(7, 22);
 		
 		System.out.println(f );
+		
+		System.out.println(f.calculate());
+		
 		
 	}
 	

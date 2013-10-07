@@ -2,12 +2,18 @@ package weka.classifiers.rules.mcac.datastructures;
 
 import com.google.common.base.Objects;
 
-
+/**
+ * Instances of this class are to be used as immutable objects
+ * @author suheil
+ *
+ */
 public class RuleID{
 	public final ColumnID colid;
 	public final int rowid;
 	public final int support;
 	public final double confidence;
+	
+	private int hashCode;
 	
 	
 	public RuleID(ColumnID colid, int rowid, int support, double confidence){
@@ -15,6 +21,8 @@ public class RuleID{
 		this.rowid = rowid;
 		this.support = support;
 		this.confidence = confidence;
+		
+		this.hashCode = Objects.hashCode(colid, rowid, support, confidence);
 	}
 	
 	public static RuleID of(ColumnID colid, FrequentItem item){
@@ -31,7 +39,7 @@ public class RuleID{
 		
 		RuleID that = (RuleID)obj;
 		return this.rowid == that.rowid 
-				&& Objects.equal(this.colid, that.colid)
+				&& this.colid.equals(that.colid)
 				&& this.support == that.support
 				&& Math.abs(this.confidence - that.confidence) < 1e-6 ;
 		
@@ -39,7 +47,7 @@ public class RuleID{
 	
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(colid, rowid, support, confidence);
+		return hashCode;
 	}
 	
 }

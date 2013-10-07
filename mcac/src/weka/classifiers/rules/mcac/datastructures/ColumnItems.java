@@ -1,6 +1,5 @@
 package weka.classifiers.rules.mcac.datastructures;
 
-import java.awt.event.ItemEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -128,12 +127,21 @@ public class ColumnItems extends LinkedHashMap<Integer, FrequentItem>{
 		return result;
 	}
 	
-	public static ColumnItems join(ColumnItems col1, ColumnItems col2, 
+	
+	/**
+	 * col1 and col2 should be adjacent. Did not check it here for preformance issues
+	 * @param col1
+	 * @param col2
+	 * @param minsupp
+	 * @param minconf
+	 * @return
+	 */
+	public static ColumnItems join(ColumnID colid, ColumnItems col1, ColumnItems col2, 
 			int minsupp, double minconf){
 		
-		ColumnID colid = ColumnID.join(col1.colid, col2.colid);
-		if(colid ==  ColumnID.ZERO) return ZERO;
-		
+//		ColumnID colid = ColumnID.join(col1.colid, col2.colid);
+//		if(colid ==  ColumnID.ZERO) return ZERO;
+
 		List<Integer> candidateItemsID = new ArrayList<>(col1.keySet());
 		candidateItemsID.retainAll(col2.keySet());
 		
@@ -174,29 +182,12 @@ public class ColumnItems extends LinkedHashMap<Integer, FrequentItem>{
 		}
 	}
 	
-	public static List<Integer> generateValues(InstancesMapped data, 
-			ColumnItems col1, ColumnItems col2, int minSupp, double minConf){
-		List<Integer> result = new ArrayList<>();
-		
-		
-		List<Integer> candidateItemsID = new ArrayList<>(col1.keySet());
-		candidateItemsID.retainAll(col2.keySet());
-		
-		if(candidateItemsID.size() == 0)
-			return result;
-		
-		
-		
-		assert ColumnID.join(col1.colid, col2.colid).size() == col1.size()+1;
-		
-		return result;
-		
-	}
+	
 
 	public void generateOccurances(Map<Integer, Integer> itemMap,
 			Map<Integer, Integer> labelMap){
-		//paranoid about the start condition !
-		clear();
+		
+		clear();//paranoid about the start condition !
 		for (Map.Entry<Integer, Integer> e : itemMap.entrySet()) {
 			Integer line = e.getKey();
 			Integer itemId = e.getValue();

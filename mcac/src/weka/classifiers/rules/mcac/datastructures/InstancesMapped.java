@@ -14,6 +14,13 @@ import weka.core.Instances;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 
+/**
+ * Map arff file to weka.core.Instances object.
+ * Init existingColumns : Map<Integer, Map<ColumnID,ColumnItems>>
+ * intCols: mapping all items to integer of first occurances
+ * @author suheil
+ *
+ */
 public class InstancesMapped {
 
 	
@@ -33,11 +40,16 @@ public class InstancesMapped {
 //	}
 	
 	
+	
 	public final Instances instances;
 	
+	/** Map<ColumnID.size Map<ColumnID, ColumnItems>>  */
+	final public Map<Integer, Map<ColumnID,ColumnItems>> existingColumns;
+
+	/**Dataset mapped to integer number represents the first occurances
+	 *Map<Attribute, Map<Line Number, First Occurance> > */
 	public Map<Integer, Map<Integer, Integer>> intCols;
 	
-	final public Map<Integer, Map<ColumnID,ColumnItems>> existingColumns;
 	
 	private int minSupport;
 	private double minConfidence;
@@ -62,13 +74,15 @@ public class InstancesMapped {
 		intCols = mapInstances(instances);
 	}
 	
-	
+	public int getClassAttribute(){
+		return instances.classIndex();
+	}
 	
 	
 	/**
-	 * Map not sparse elements
-	 * @param data
-	 * @return
+	 * Map dataset (not sparsed elements) to intCol format
+	 * @param data: Weka Instances
+	 * @return Map<Attribute, Map<Line Number, First Occurance> >
 	 */
 	public static Map<Integer, Map<Integer, Integer>> mapInstances(
 			Instances data){
@@ -88,8 +102,6 @@ public class InstancesMapped {
 		for (int i = 0; i < numAttributes; i++) {
 			imaps.add(new HashMap<Double, Integer>());
 		}
-
-
 
 		for (int lineNumber = 0; lineNumber < numInstances; lineNumber++) {
 			Instance inst = data.instance(lineNumber);

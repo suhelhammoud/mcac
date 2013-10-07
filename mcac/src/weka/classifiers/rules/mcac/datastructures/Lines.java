@@ -1,6 +1,8 @@
 package weka.classifiers.rules.mcac.datastructures;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,15 +15,22 @@ import com.google.common.collect.Lists;
 @SuppressWarnings("serial")
 public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 	
+	public static enum LABEL_RULE {SAME_LABEL, ANY_LABEL};
 	
 	public final RuleComparator comparator;
+	public final LABEL_RULE labelRule;
 	
-	public Lines(int initialCapacity, RuleComparator comparator){
+	public Lines(int initialCapacity, RuleComparator comparator
+			, LABEL_RULE labelRule){
+		super(initialCapacity);
 		this.comparator = comparator;
+		this.labelRule = labelRule;
+		
 	}
 	
-	public static Lines of(int initialCapacity, RuleComparator.RANK_ID rank){
-		return new Lines(initialCapacity, RuleComparator.of(rank));
+	public static Lines of(int initialCapacity, 
+			RuleComparator.RANK_ID rank, LABEL_RULE labelRule){
+		return new Lines(initialCapacity, RuleComparator.of(rank), labelRule);
 	}
 	
 	private void insertOrReplace(Integer key, RuleID value) {
@@ -38,9 +47,18 @@ public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 	
 	public void mapFrequentItem(ColumnID colid, FrequentItem feq){
 		RuleID ruleid = RuleID.of(colid, feq);
-		for (Integer line : feq.values()) {
-			insertOrReplace(line, ruleid);
+		
+		Collection<Integer> lines;
+		
+		if(labelRule == LABEL_RULE.ANY_LABEL)
+			lines = feq.values();
+		else{// SAME_LABEL
+			lines = feq.get(feq.getCalc().label);
 		}
+			
+		for (Integer line : lines) {
+			insertOrReplace(line, ruleid);
+		}			
 	}
 	
 	public void coverRules(Collection <Map<ColumnID,ColumnItems>> columns){
@@ -59,9 +77,7 @@ public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 						
 						@Override
 						public void run() {
-							// TODO Auto-generated method stub
 							mapFrequentItem(colid, fitem);
-							
 						}
 					});
 				}
@@ -71,7 +87,7 @@ public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 		exec.shutdown();
 		
 		try {
-			boolean okDoneAllTasks = exec.awaitTermination(180, TimeUnit.SECONDS);
+			boolean okDoneAllTasks = exec.awaitTermination(1800, TimeUnit.SECONDS);
 			assert okDoneAllTasks;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -81,6 +97,29 @@ public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 	};
 
 
+	public static List<Integer> getNotCoverredLines(Collection<Integer> initialLines,
+			Collection<Integer> coveredLines){
+		int linesRemained = initialLines.size() - coveredLines.size();
+		
+		assert linesRemained >= 0;
+		
+		List<Integer> result = new ArrayList<>(linesRemained);
+		
+		for (Integer line : initialLines) {
+			if(! coveredLines.contains(line))
+				result.add(line);
+		}
+
+		return result;
+	}
+	
+	
+	
+	public static FrequentItem getDefaultRule(){
+		return null;
+	}
+	
+	
 	public static void main(String ... args){
 		List<Integer> lst = Lists.newArrayList(1,2,3,4,5,6,7,8,9);
 		for (final Integer i : lst) {
