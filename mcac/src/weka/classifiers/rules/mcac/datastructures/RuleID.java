@@ -1,5 +1,6 @@
 package weka.classifiers.rules.mcac.datastructures;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 
 /**
@@ -30,6 +31,7 @@ public class RuleID{
 		return new RuleID(colid, calc.rowId , calc.support, calc.confidence);
 	}
 	
+	
 	@Override
 	public boolean equals(Object obj) {
 		if(obj == this)return true;
@@ -48,6 +50,11 @@ public class RuleID{
 	@Override
 	public int hashCode() {
 		return hashCode;
+	}
+	
+	@Override
+	public String toString() {
+		return "<"+colid+","+rowid+" ,conf:"+confidence+", supp="+support+ " >";
 	}
 	
 }

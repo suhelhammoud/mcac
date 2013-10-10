@@ -14,6 +14,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultiset;
@@ -22,7 +25,8 @@ import com.google.common.collect.Multisets;
 import com.google.common.primitives.Ints;
 
 public class ColumnID implements Comparable<ColumnID> {
-
+	static Logger logger = LoggerFactory.getLogger(ColumnID.class);
+	
 	final public static ColumnID ZERO = of();
 
 	public static List<Integer> getAtomics(ColumnID col) {
@@ -40,31 +44,30 @@ public class ColumnID implements Comparable<ColumnID> {
 	/**
 	 * Optimized method which runs on parallel threads
 	 * 
-	 * @param ids
-	 *            : columnId of certain order
+	 * @param ids : columnId of certain order, no change on ids
 	 * @return collection of possible columnIds of one step more higher order
 	 */
-	public static List<ColumnID> combined(final List<ColumnID> ids) {
+	public static List<ColumnID> combined(final ColumnID[] ids) {
 		final Multiset<ColumnID> counterSet = HashMultiset.create();
 
-		if (ids.size() == 0)
+		if (ids.length == 0)
 			return new ArrayList<>();
 
-		final int outSize = ids.get(0).size() + 1;
+		final int outSize = ids[0].size() + 1;
 		final int outCount = premutations(outSize);
 
 		int nrOfProcessors = Runtime.getRuntime().availableProcessors();
 		ExecutorService exec = Executors.newFixedThreadPool(nrOfProcessors);
 
-		for (int i = 0; i < ids.size() - 1; i++) {
-			for (int j = i + 1; j < ids.size(); j++) {
+		for (int i = 0; i < ids.length - 1; i++) {
+			for (int j = i + 1; j < ids.length; j++) {
 
 				final int first = i, second = j;
 				exec.execute(new Runnable() {
 
 					@Override
 					public void run() {
-						ColumnID id = join(ids.get(first), ids.get(second));
+						ColumnID id = join(ids[first], ids[second]);
 						if (id.size() == outSize) {
 							synchronized (counterSet) {
 								counterSet.add(id);
@@ -222,6 +225,8 @@ public class ColumnID implements Comparable<ColumnID> {
 		int hash1 = Arrays.hashCode(col1.ids);
 		int hash2 = Arrays.hashCode(col2.ids);
 
+		logger.info("equals {} ", Arrays.equals(col1.ids, col2.ids) );
+        logger.info("Hello {} test ", 777777);
 		System.out.println(Arrays.equals(col1.ids, col2.ids));
 		System.out.println(hash1 == hash2);
 

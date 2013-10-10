@@ -10,27 +10,41 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import weka.classifiers.rules.mcac.datastructures.RuleComparator.RANK_ID;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 @SuppressWarnings("serial")
 public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 	
-	public static enum LABEL_RULE {SAME_LABEL, ANY_LABEL};
 	
+	private static final Logger logger = LoggerFactory.getLogger(Lines.class);
+	
+	public static enum LABEL_RULE {SAME_LABEL, ANY_LABEL};
+	public final RANK_ID ruleRank;
 	public final RuleComparator comparator;
 	public final LABEL_RULE labelRule;
 	
-	public Lines(int initialCapacity, RuleComparator comparator
+	public Lines(int initialCapacity, RANK_ID rank
 			, LABEL_RULE labelRule){
 		super(initialCapacity);
-		this.comparator = comparator;
+		this.ruleRank = rank;
+		this.comparator = RuleComparator.of(ruleRank);
 		this.labelRule = labelRule;
+		
+		logger.info("Init Lines with initialCapacity {}, Comparator {} and LABEL_RULE {}", 
+				initialCapacity, comparator.getClass().getName(), labelRule);
 		
 	}
 	
 	public static Lines of(int initialCapacity, 
 			RuleComparator.RANK_ID rank, LABEL_RULE labelRule){
-		return new Lines(initialCapacity, RuleComparator.of(rank), labelRule);
+		return new Lines(initialCapacity, rank, labelRule);
 	}
 	
 	private void insertOrReplace(Integer key, RuleID value) {
@@ -47,6 +61,7 @@ public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 	
 	public void mapFrequentItem(ColumnID colid, FrequentItem feq){
 		RuleID ruleid = RuleID.of(colid, feq);
+		//logger.debug("toLines fi of colid:{}, rowId:{}",colid, ruleid.rowid  );
 		
 		Collection<Integer> lines;
 		
@@ -61,27 +76,30 @@ public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 		}			
 	}
 	
-	public void coverRules(Collection <Map<ColumnID,ColumnItems>> columns){
+	public void coverLinesWithRules(Collection <Map<ColumnID,ColumnItems>> existingColumns){
 //		clear();
 		
 		int nrOfProcessors = Runtime.getRuntime().availableProcessors();
 		ExecutorService exec = Executors.newFixedThreadPool(nrOfProcessors);
 		
+		logger.info("coverLinesWithRules pool with {} processors", nrOfProcessors);
 
-		for (Map<ColumnID, ColumnItems> map : columns) {
-			for (final ColumnItems colitems : map.values()) {
-				final ColumnID colid = colitems.colid;
+		for (Map<ColumnID, ColumnItems> subMap : existingColumns) {
+			for (final Map.Entry<ColumnID, ColumnItems> e : subMap.entrySet()) {
 				
-				for (final FrequentItem fitem : colitems.values()) {
-					exec.execute(new Runnable() {
-						
-						@Override
-						public void run() {
-							mapFrequentItem(colid, fitem);
+				exec.execute(new Runnable() {
+					
+					@Override
+					public void run() {
+						logger.debug("map lines in colid:{}, number of freq items {}", e.getKey(), e.getValue().size() );
+						for (FrequentItem feq : e.getValue().values()) {
+							mapFrequentItem(e.getKey(), feq);
 						}
-					});
-				}
+					}
+				});
+				
 			}
+			
 		}
 
 		exec.shutdown();
@@ -119,6 +137,16 @@ public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 		return null;
 	}
 	
+	@Override
+	public String toString() {
+		return Objects.toStringHelper(this)
+				.add("Rule Rank", ruleRank)
+				.add("label match", this.labelRule)
+				.addValue(
+						Joiner.on("\n")
+						.withKeyValueSeparator("->")
+						.join(this)).toString();
+	}
 	
 	public static void main(String ... args){
 		List<Integer> lst = Lists.newArrayList(1,2,3,4,5,6,7,8,9);
@@ -127,4 +155,6 @@ public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 		}
 		System.out.println("done");
 	}
+	
+	
 }

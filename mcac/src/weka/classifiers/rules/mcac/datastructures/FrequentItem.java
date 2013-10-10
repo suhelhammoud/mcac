@@ -6,6 +6,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultimap;
@@ -14,6 +17,8 @@ import com.google.common.collect.Multimap;
 public class FrequentItem {
 	
 	
+	private static final Logger logger = LoggerFactory
+			.getLogger(FrequentItem.class);
 	
 	public final static FrequentItem EMPTY= new FrequentItem();
 	

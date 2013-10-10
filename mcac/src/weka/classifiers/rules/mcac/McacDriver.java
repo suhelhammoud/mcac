@@ -10,10 +10,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
+
 import weka.classifiers.Classifier;
 import weka.classifiers.rules.mcac.datastructures.ColumnID;
 import weka.classifiers.rules.mcac.datastructures.ColumnItems;
 import weka.classifiers.rules.mcac.datastructures.InstancesMapped;
+import weka.classifiers.rules.mcac.datastructures.Lines;
+import weka.classifiers.rules.mcac.datastructures.Lines.LABEL_RULE;
+import weka.classifiers.rules.mcac.datastructures.RuleComparator.RANK_ID;
 import weka.classifiers.rules.mcac.datastructures.RuleID;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -25,6 +34,8 @@ import weka.core.Instances;
  * 
  */
 public class McacDriver {
+	private static final Logger logger = LoggerFactory
+			.getLogger(McacDriver.class);
 
 	/**
 	 * 
@@ -36,7 +47,11 @@ public class McacDriver {
 	 */
 	public static Map<ColumnID, ColumnItems> generateOrderedFrequentItems(
 			final InstancesMapped data, int order) {
+		
+		logger.info("frequent items of oreder {} ", order);
 
+		
+		
 		final Map<ColumnID, ColumnItems> result = Collections
 				.synchronizedMap(new HashMap<ColumnID, ColumnItems>());// TODO
 																		// estimate
@@ -47,10 +62,11 @@ public class McacDriver {
 		final Map<ColumnID, ColumnItems> inColumns = data.existingColumns
 				.get(order - 1);// TODO use collection directly
 
-		List<ColumnID> ids = new ArrayList<>(data.existingColumns
-				.get(order - 1).keySet());
+		ColumnID[] ids = inColumns.keySet().toArray(new ColumnID[inColumns.size()]);
 
 		List<ColumnID> idsCombined = ColumnID.combined(ids);
+		
+		logger.info("candidate columnIDs : {} out of: {} lower", idsCombined.size(), ids.length);
 		// check no combination
 		if (idsCombined.size() == 0)
 			return result;
@@ -58,6 +74,7 @@ public class McacDriver {
 		int nrOfProcessors = Runtime.getRuntime().availableProcessors();
 		ExecutorService exec = Executors.newFixedThreadPool(nrOfProcessors);
 
+		logger.debug("statred parallel thread pool with {} processors", nrOfProcessors);
 		for (final ColumnID colid : idsCombined) {
 			exec.execute(new Runnable() {
 
@@ -89,6 +106,7 @@ public class McacDriver {
 			e.printStackTrace();
 		}
 
+		logger.info("actuall columnsTem generated are {}", result.size());
 		return result;
 	}
 
@@ -103,11 +121,17 @@ public class McacDriver {
 		int nrOfProcessors = Runtime.getRuntime().availableProcessors();
 		ExecutorService exec = Executors.newFixedThreadPool(nrOfProcessors);
 
-		for (final Integer key : data.intCols.keySet()) {
+		logger.debug("statred parallel thread pool with {} processors", nrOfProcessors);
+
+		List<Integer> aId = data.getColsIndexes();
+		aId.remove(Integer.valueOf(data.getClassIndex()));
+		
+		for (final Integer key : aId) {
 			exec.execute(new Runnable() {
 
 				@Override
 				public void run() {
+					logger.debug("generate atomic {}", key);
 					ColumnItems col = ColumnItems.of(key);
 					col.generateAtomicValues(data);
 
@@ -131,15 +155,25 @@ public class McacDriver {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		
+		logger.info("actuall atomic columnsTem generated are {}", results.size());
 
 		return results;
 	}
+	/**
+	 * changes are applied on subMap, frequent item not survived to be deleted
+	 * columnsItems with zero frequent items are also deleted
+	 * @param subMap
+	 * @param minConf
+	 */
 
 	public static void filterNotSurrvivedConfidences(
 			Map<ColumnID, ColumnItems> subMap, final double minConf) {
 
 		int nrOfProcessors = Runtime.getRuntime().availableProcessors();
 		ExecutorService exec = Executors.newFixedThreadPool(nrOfProcessors);
+
+		logger.info("filterNotSurvivedConfidences thread pool with {} processors", nrOfProcessors);
 
 		for (Iterator<Map.Entry<ColumnID, ColumnItems>> iter = subMap
 				.entrySet().iterator(); iter.hasNext();) {
@@ -163,6 +197,8 @@ public class McacDriver {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		logger.info("finished filtering individual columns out of {}", subMap.size());
+
 
 		// prune zero columns
 		for (Iterator<Map.Entry<ColumnID, ColumnItems>> iter = subMap
@@ -171,6 +207,8 @@ public class McacDriver {
 			if (col.size() == 0)
 				iter.remove();
 		}
+		
+		logger.info("prune zero columns remaned is {}", subMap.size());
 
 	}
 
@@ -180,26 +218,39 @@ public class McacDriver {
 	 * @param data
 	 */
 	public static void generateFrequentItems(InstancesMapped data) {
+		
+		
 		Map<ColumnID, ColumnItems> atomics = generateAtomicFrequentItems(data);
-
+		logger.info("number of atomic columns passed the support threshold: {}", atomics.size());
+		
 		if (atomics.size() == 0)
 			return;// No more heigher order columns
 
-		data.existingColumns.put(1, atomics);
+		data.existingColumns.add(atomics);
 
-		for (int order = 2; order < data.intCols.size(); order++) {
+		final int maxOrder = data.getColsIndexes().size()-1;
+		
+		logger.info("MaxOrder value: {}", maxOrder);
+		for (int order = 1; order < maxOrder; order++) {
 			Map<ColumnID, ColumnItems> subMap = generateOrderedFrequentItems(
 					data, order);
 			if (subMap.size() == 0)
 				return;// No more heigher order columns
 
-			data.existingColumns.put(order, subMap);
+			data.existingColumns.add( subMap);//TODO check order here
 
+			logger.debug("filter not survived {}", order-1);
 			// TODO save more memroy delete frequentitems which are not rules
 			filterNotSurrvivedConfidences(data.existingColumns.get(order-1),
 					data.getMinConfidence());
 
 		}
+		logger.debug("filter not survived {}", maxOrder-1);
+
+		//filter the heighest order columns
+		filterNotSurrvivedConfidences(data.existingColumns.get(maxOrder-1),
+				data.getMinConfidence());
+
 	}
 	
 	public static Classifier getClassifier(InstancesMapped data){
@@ -222,8 +273,43 @@ public class McacDriver {
 
 	public static Map<Integer, RuleID> mapRuleSurvivedRulesToLines(
 			InstancesMapped data) {
-
+		
 		return null;
 	}
 
+	public static void main(String[] args) {
+		InstancesMapped data = InstancesMapped.of("data/in/contact.arff");
+		data.toIntCols();
+		
+		data.setMinSupport(1);
+		data.setMinConfidence(0.10);
+		
+		logger.debug("data size {} \n {}", data.instances.numInstances(),data.toString());
+		
+		logger.info("going to generate frequent items");
+		generateFrequentItems(data);
+		
+		
+		Lines lines = Lines.of(data.instances.numInstances(), RANK_ID.CONF_SUPP_CARD,
+				LABEL_RULE.SAME_LABEL);
+		
+		logger.info("lines with instances {}, rank:{}, labelMatch: {}"
+				, data.instances.numInstances(), lines.ruleRank, lines.labelRule);
+		
+		lines.coverLinesWithRules(data.existingColumns);
+		
+		logger.debug("output\n "+ lines);
+		logger.info("done");
+		
+//		logger.info( 
+//				Objects.toStringHelper("results")
+//				.addValue(
+//				Joiner.on("\n============>")
+//				.join(data.existingColumns)
+//				).toString());
+//
+//		logger.info("done");
+		
+		
+	}
 }

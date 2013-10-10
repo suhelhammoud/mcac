@@ -8,13 +8,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 
 
 @SuppressWarnings("serial")
 public class ColumnItems extends LinkedHashMap<Integer, FrequentItem>{
-
+	
+	private static final Logger logger = LoggerFactory
+			.getLogger(ColumnItems.class);
+	
 	public final ColumnID colid;
 	
 	final public static ColumnItems ZERO = of();
@@ -46,66 +52,33 @@ public class ColumnItems extends LinkedHashMap<Integer, FrequentItem>{
 						.toString();
 	}
 
-	public static void main(String[] args) {
+	 
 
-		testGenerateAtomic();
-
-
-	}
-
-	private static void testGenerateAtomic(){
-		InstancesMapped data = InstancesMapped.of("data/in/contact.arff");
-
-		data.setMinSupport(0);
-		data.setMinConfidence(0.0);
-
-		data.toIntCols();
-
-		for (Integer key : data.intCols.keySet()) {
-			ColumnItems col = ColumnItems.of(key);
-			List<Integer> itemsId = col.generateAtomicValues(data);
-
-			System.out.println(col);
-		}
-
-	}
-	private static void testColumnItems() {
-		InstancesMapped data = InstancesMapped.of("data/in/contact.arff");
-
-		data.setMinSupport(0);
-		data.setMinConfidence(0.0);
-
-		data.toIntCols();
-
-		int attIndex = 0;//data.numAttributes()-1;
-
-		ColumnItems col = ColumnItems.of(attIndex);
-
-		System.out.println("AttIndex "+ attIndex + "\n"
-				+ Joiner.on("\n").withKeyValueSeparator("  ->  ")
-				.join(data.intCols.get(attIndex)));
+	 
+	 
+//		System.out.println("AttIndex "+ attIndex + "\n"
+//				+ Joiner.on("\n").withKeyValueSeparator("  ->  ")
+//				.join(data.intCols.get(attIndex)));
 
 
-		col.generateOccurances(data.intCols.get(attIndex), 
-				data.intCols.get(data.instances.numAttributes()-1));
+	 
 
-		System.out.println("map Item 1 col \n" + col.toString());
-	}
-
+	
 	//TODO change return value to void
-	public List<Integer> generateAtomicValues(InstancesMapped data){
+	public void generateAtomicValues(InstancesMapped data){
 
 		assert colid.size() == 1;
 		int atomicIndex = colid.getAtomic();
-		int labelIndex = data.instances.numAttributes()-1;
+		int labelIndex = data.getClassIndex();
 
+		logger.debug("atomic values for colid:{} atomicIndex:{} labelIndex:{}",
+				colid, atomicIndex, labelIndex);
 
+//		List<Integer> result = new ArrayList<>(
+//				data.getIntCol(atomicIndex).size());//trying to guess max list size
 
-		List<Integer> result = new ArrayList<>(
-				data.intCols.get(atomicIndex).size());//trying to guess max list size
-
-		generateOccurances(data.intCols.get(atomicIndex), 
-				data.intCols.get(labelIndex));
+		generateOccurances(data.getIntCol(atomicIndex), 
+				data.getIntCol(labelIndex));
 
 		Iterator<Integer> iter = keySet().iterator();
 		while(iter.hasNext()){
@@ -117,14 +90,10 @@ public class ColumnItems extends LinkedHashMap<Integer, FrequentItem>{
 				continue;
 			}
 
-			if(calc.confidence < data.getMinConfidence()){
-				continue;
-			}
-			result.add(itemID); 
-		}
-		
-		
-		return result;
+//			if(calc.confidence < data.getMinConfidence()){
+//				continue;
+//			}
+		}		
 	}
 	
 	

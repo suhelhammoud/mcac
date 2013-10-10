@@ -2,9 +2,16 @@ package weka.classifiers.rules.mcac.datastructures;
 
 import java.util.Comparator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 
 abstract public class RuleComparator implements Comparator<RuleID>{
+	
+	protected static final Logger logger = LoggerFactory
+			.getLogger(RuleComparator.class );
+	
 	public static enum RANK_ID {
 		CONF_SUPP_CARD,
 		CONF_CARD_SUPP,
@@ -14,8 +21,9 @@ abstract public class RuleComparator implements Comparator<RuleID>{
 		CARD_SUPP_CONF,
 		SUPP_RCARD_CONF
 	}
-	
+
 	public static RuleComparator of(RANK_ID rank){
+		logger.info("comparator is using rank of:{}", rank.name());
 		switch (rank) {
 		case CONF_SUPP_CARD:
 			return new Compare_CONF_SUPP_CARD();
@@ -50,7 +58,7 @@ abstract public class RuleComparator implements Comparator<RuleID>{
 			return r1;
 		else
 			return r2;
-	}
+	}	
 }
 
 
@@ -88,6 +96,7 @@ class Compare_CONF_CARD_SUPP extends RuleComparator{
 
 		return 0;
 	}
+	
 }
 
 

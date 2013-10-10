@@ -10,14 +10,10 @@ import com.google.common.collect.ImmutableBiMap;
 @SuppressWarnings("serial")
 public class LineLabel extends HashMap<Integer, Integer>{
 	
-
-}
-
-class BiLabel  {
 	private final BiMap<Integer, Integer> lblLine;// = ImmutableBiMap.of();
 	private final BiMap<Integer, Integer> lineLbl;
 	
-	public BiLabel(Map<Integer, Integer> llnmap) {
+	public LineLabel(Map<Integer, Integer> llnmap) {
 		lblLine = HashBiMap.create(llnmap);
 		lblLine.putAll(llnmap);
 		lineLbl = lblLine.inverse();
