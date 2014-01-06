@@ -31,7 +31,7 @@ public class ColumnItemsTest {
 		Collections.sort(intColsKeys);
 		for (Integer key : intColsKeys) {
 			ColumnItems col = ColumnItems.of(key);
-			col.generateAtomicValues(data);
+			col.generateAtomicValues(data.getIntCol(key), data.getLabels(), data.getMinSupport());
 		}
 	}
 	

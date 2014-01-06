@@ -65,27 +65,25 @@ public class ColumnItems extends LinkedHashMap<Integer, FrequentItem>{
 
 	
 	//TODO change return value to void
-	public void generateAtomicValues(InstancesMapped data){
+	public void generateAtomicValues(Map<Integer, Integer> atomicAtt, Map<Integer,Integer> labels, int minSupport){
 
 		assert colid.size() == 1;
-		int atomicIndex = colid.getAtomic();
-		int labelIndex = data.getClassIndex();
+		//int atomicIndex = colid.getAtomic();
+		//int labelIndex = data.getClassIndex();
 
-		logger.debug("atomic values for colid:{} atomicIndex:{} labelIndex:{}",
-				colid, atomicIndex, labelIndex);
+		logger.debug("atomic values for colid:{}", colid);
 
 //		List<Integer> result = new ArrayList<>(
 //				data.getIntCol(atomicIndex).size());//trying to guess max list size
 
-		generateOccurances(data.getIntCol(atomicIndex), 
-				data.getIntCol(labelIndex));
+		generateOccurances(atomicAtt, labels);
 
 		Iterator<Integer> iter = keySet().iterator();
 		while(iter.hasNext()){
 			int itemID = iter.next();
 			FrequentItem item = get(itemID);
 			Calc calc = item.getCalc();
-			if(calc.support < data.getMinSupport()){
+			if(calc.support < minSupport){
 				iter.remove();
 				continue;
 			}

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -133,7 +134,7 @@ public class McacDriver {
 				public void run() {
 					logger.debug("generate atomic {}", key);
 					ColumnItems col = ColumnItems.of(key);
-					col.generateAtomicValues(data);
+					col.generateAtomicValues(data.getIntCol(key), data.getLabels(), data.getMinSupport());
 
 					if (col.size() == 0)
 						return;
@@ -277,6 +278,7 @@ public class McacDriver {
 		return null;
 	}
 
+	
 	public static void main(String[] args) {
 		InstancesMapped data = InstancesMapped.of("data/in/contact.arff");
 		data.toIntCols();
@@ -298,6 +300,16 @@ public class McacDriver {
 		
 		lines.coverLinesWithRules(data.existingColumns);
 		
+		
+		
+		
+		Map<Integer,Integer> labelColumn = data.getIntCol(data.getClassIndex());
+
+		Set<Integer> notCoveredSet = lines.getNotCoveredLines(labelColumn.keySet());
+		//get uncoverred lines
+		
+		
+		// get default rule
 		logger.debug("output\n "+ lines);
 		logger.info("done");
 		

@@ -20,6 +20,8 @@ import weka.core.Instances;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 
 /**
  * Map arff file to weka.core.Instances object.
@@ -60,6 +62,8 @@ public class InstancesMapped {
 	 *Map<Attribute, Map<Line Number, First Occurance> > */
 	private Map<Integer, Map<Integer, Integer>> intCols;
 	
+	private Map<Integer, Integer> labels;
+	
 	public Map<Integer, Integer> getIntCol(int att){
 		return intCols.get(att);
 	}
@@ -90,6 +94,10 @@ public class InstancesMapped {
 	public void toIntCols(){
 //		intCols = mapInstances(instances);
 		intCols = mapInstancesParallel(instances);
+	}
+	
+	public Map<Integer, Integer> getLabels(){
+		return getIntCol(getClassIndex());
 	}
 	
 	public void setClassIndex(int index){

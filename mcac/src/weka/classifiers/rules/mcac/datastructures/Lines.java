@@ -3,8 +3,13 @@ package weka.classifiers.rules.mcac.datastructures;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,7 +22,9 @@ import weka.classifiers.rules.mcac.datastructures.RuleComparator.RANK_ID;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multiset;
 
 @SuppressWarnings("serial")
 public class Lines extends ConcurrentHashMap<Integer, RuleID>{
@@ -131,7 +138,66 @@ public class Lines extends ConcurrentHashMap<Integer, RuleID>{
 		return result;
 	}
 	
+	public Set<Integer> getNotCoveredLines(Collection totalLines){
+		Set<Integer> result = new HashSet<>(totalLines);
+		result.removeAll(this.keySet());
+		return result;
+	}
 	
+	private SortedMap<RuleID, Multiset<Integer>> getRulesWithFreqs(Map<Integer, Integer> labels){
+		Map<RuleID, Multiset<Integer>> hashMap = new HashMap<RuleID, Multiset<Integer>>();
+		
+		//do it in one thread
+		for (Map.Entry<Integer, RuleID> e : entrySet()) {
+			Multiset<Integer> multiSet = hashMap.get(e.getValue());
+			if(multiSet == null){
+				multiSet = HashMultiset.create();
+				hashMap.put(e.getValue(), multiSet);
+			}
+			multiSet.add(labels.get(e.getKey()));
+		}
+		
+		//TODO for performance, check using treemap from the start
+		SortedMap<RuleID, Multiset<Integer>> result = new TreeMap<>(this.comparator);
+		
+		result.putAll(hashMap);
+		
+		return result;
+	}
+	
+	public List<McacRule> getClassifier( InstancesMapped data){
+		
+		final int labelIndex = data.instances.classIndex();
+		SortedMap<RuleID, Multiset<Integer>> rulesSorted = getRulesWithFreqs(data.getIntCol(labelIndex));
+		
+		List<McacRule> result = new ArrayList<>(rulesSorted.size());
+		
+		for (Map.Entry<RuleID, Multiset<Integer>> e : rulesSorted.entrySet()) {
+			int[] ids = e.getKey().colid.ids();
+			int rowId = e.getKey().rowid;
+			
+			String[] condition = new String[ids.length];
+			for (int i = 0; i < ids.length; i++) {
+				condition[i] = data.instances.instance(rowId).stringValue(ids[i]);
+			}
+			
+			String[] labels = new String[e.getValue().size()];
+			int[] freqs = new int[e.getValue().size()];
+
+			int var=0;
+			for (Integer val : e.getValue()) {
+				labels[var] = data.instances.instance(val).stringValue(labelIndex);
+				freqs[var] = e.getValue().count(labels[var]);
+				var++;
+			}
+			
+			McacRule rule = new McacRule(ids, condition, labels, freqs, e.getKey().support, e.getKey().confidence);
+			result.add(rule);
+			
+		}
+		return result;
+		
+	}
 	
 	public static FrequentItem getDefaultRule(){
 		return null;

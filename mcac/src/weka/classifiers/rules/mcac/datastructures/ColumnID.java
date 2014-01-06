@@ -152,6 +152,10 @@ public class ColumnID implements Comparable<ColumnID> {
 	public int get(int i) {
 		return ids[i];
 	}
+	
+	public int[] ids(){
+		return Arrays.copyOf(ids, ids.length);
+	}
 
 	@Override
 	public int hashCode() {
